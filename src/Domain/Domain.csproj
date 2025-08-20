@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>MSCoip.Domain</RootNamespace>
+    <AssemblyName>MSCoip.Domain</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+      <PackageReference Include="FastEndpoints" />
+      <PackageReference Include="MediatR" />
+  </ItemGroup>
+
+</Project>

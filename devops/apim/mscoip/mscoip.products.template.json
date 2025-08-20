@@ -1,0 +1,25 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "ApimServiceName": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "properties": {
+        "description": "FAS - Customer Improvement Platform",
+        "terms": "",
+        "subscriptionRequired": true,
+        "approvalRequired": false,
+        "state": "published",
+        "displayName": "FAS - Customer Improvement Platform"
+      },
+      "name": "[concat(parameters('ApimServiceName'), '/FAS-COIP')]",
+      "type": "Microsoft.ApiManagement/service/products",
+      "apiVersion": "2021-01-01-preview",
+      "dependsOn": []
+    }
+  ]
+}

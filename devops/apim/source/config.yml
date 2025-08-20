@@ -1,0 +1,33 @@
+version: 0.0.1
+apimServiceName: ut-apim
+apis:
+  - name: mscip
+    openApiSpec: https://localhost/swagger/v1/swagger.json
+    policy: D:\Development\FAS\Backend\MSCoip\devops\APIM\mscoip\policies\Backend-Policy.xml
+    suffix: fas/mscoip
+    subscriptionRequired: true
+    isCurrent: true
+    protocols: https
+    revision: 1
+    revisionDescription: MSCOIP first revision
+    products: FAS
+backends:
+  - title: FAS-MSCOIP
+    description: FAS-MSCOIP
+    url: https://localhost
+    protocol: http
+    tls:
+      validateCertificateChain: false
+      validateCertificateName: false
+products:
+  - name: FAS
+    displayName: FAS
+    description: Customer Improvement Platform
+    terms: some terms
+    subscriptionRequired: true
+    approvalRequired: false
+    state: published
+outputLocation: D:\Development\APIM\result
+linked: true
+linkedTemplatesBaseUrl: https://xxx.blob.core.windows.net/FAS/mscoip
+linkedTemplatesUrlQueryString: query

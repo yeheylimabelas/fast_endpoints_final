@@ -1,0 +1,23 @@
+#Part 1
+FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS base
+
+ARG MAJOR_MINOR=0.1
+ARG PATCH=0
+ARG SUFFIX_VERSION=
+
+# Build app from sdk image
+WORKDIR /src
+COPY . .
+RUN dotnet publish "MSCoip.sln" -c Release -o ./app /p:VersionPrefix=$MAJOR_MINOR.$PATCH /p:VersionSuffix=$SUFFIX_VERSION
+
+#Part 2
+FROM utseadadrndnpacr.azurecr.io/dotnet/8-jammy:latest AS final
+
+# Copy to runtime image
+ENV HOME=/home/ut-dad
+WORKDIR $HOME/
+COPY --from=base /src/app .
+
+EXPOSE 8080
+
+ENTRYPOINT ["dotnet", "MSCoip.Api.dll"]
