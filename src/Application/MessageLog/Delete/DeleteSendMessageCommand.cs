@@ -12,7 +12,7 @@ namespace MSCoip.Application.MessageLog.Delete;
 /// <summary>
 /// DeleteSendMessageCommand
 /// </summary>
-public class DeleteSendMessageCommand : IRequest<bool>
+public class DeleteSendMessageCommand : ICommand<bool>
 {
 }
 
@@ -29,21 +29,21 @@ public class DeleteSendMessageCommandHandler(
     IApplicationDbContext _context,
     ILogger<DeleteSendMessageCommandHandler> _logger,
     AppSetting _appSetting
-) : IRequestHandler<DeleteSendMessageCommand, bool>
+) : ICommandHandler<DeleteSendMessageCommand, bool>
 {
     /// <summary>
-    /// Handle Delete Send Message
+    /// ExecuteAsync Delete Send Message
     /// </summary>
-    /// <param name="request">
+    /// <param name="command">
     /// The encapsulated request body
     /// </param>
-    /// <param name="cancellationToken">
+    /// <param name="ct">
     /// The cancellation token to perform cancel the operation
     /// </param>
     /// <returns></returns>
-    public async Task<bool> Handle(
-        DeleteSendMessageCommand request,
-        CancellationToken cancellationToken)
+    public async Task<bool> ExecuteAsync(
+        DeleteSendMessageCommand command,
+        CancellationToken ct)
     {
         var status = false;
 
@@ -58,7 +58,7 @@ public class DeleteSendMessageCommandHandler(
             await _context
                 .MessageBroker
                 .Where(x => date > x.StoredDate)
-                .DeleteAsync(cancellationToken)
+                .DeleteAsync(ct)
                 .ConfigureAwait(false);
 
             status = true;

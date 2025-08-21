@@ -12,7 +12,7 @@ namespace MSCoip.Application.MessageLog.Delete;
 /// <summary>
 /// DeleteReceivedMessageCommand
 /// </summary>
-public class DeleteReceivedMessageCommand : IRequest<bool>
+public class DeleteReceivedMessageCommand : ICommand<bool>
 {
 }
 
@@ -30,21 +30,21 @@ public class DeleteReceivedMessageCommandHandler(
     ILogger<DeleteReceivedMessageCommandHandler> _logger,
     AppSetting _appSetting
     )
-        : IRequestHandler<DeleteReceivedMessageCommand, bool>
+        : ICommandHandler<DeleteReceivedMessageCommand, bool>
 {
     /// <summary>
-    /// Handle Delete Received Message
+    /// ExecuteAsync Delete Received Message
     /// </summary>
-    /// <param name="request">
+    /// <param name="command">
     /// The encapsulated request body
     /// </param>
-    /// <param name="cancellationToken">
+    /// <param name="ct">
     /// The cancellation token to perform cancel the operation
     /// </param>
     /// <returns></returns>
-    public async Task<bool> Handle(
-        DeleteReceivedMessageCommand request,
-        CancellationToken cancellationToken)
+    public async Task<bool> ExecuteAsync(
+        DeleteReceivedMessageCommand command,
+        CancellationToken ct)
     {
         var status = false;
 
@@ -59,7 +59,7 @@ public class DeleteReceivedMessageCommandHandler(
             await _context
                 .ReceivedMessageBroker
                 .Where(x => date > x.TimeIn)
-                .DeleteAsync(cancellationToken)
+                .DeleteAsync(ct)
                 .ConfigureAwait(false);
 
             status = true;
