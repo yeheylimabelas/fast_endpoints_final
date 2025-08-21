@@ -12,7 +12,7 @@ namespace MSCoip.Application.Changelogs.Commands.DeleteChangelog;
 /// <summary>
 /// DeleteChangelogCommand
 /// </summary>
-public class DeleteChangelogCommand : IRequest<bool>
+public class DeleteChangelogCommand : ICommand<bool>
 {
     /// <summary>
     /// Handling DeleteChangelogCommand
@@ -28,21 +28,21 @@ public class DeleteChangelogCommand : IRequest<bool>
         IApplicationDbContext _context,
         ILogger<DeleteChangelogCommandHandler> _logger,
         AppSetting _appSetting
-    ) : IRequestHandler<DeleteChangelogCommand, bool>
+    ) : ICommandHandler<DeleteChangelogCommand, bool>
     {
         /// <summary>
-        /// Handle
+        /// ExecuteAsync
         /// </summary>
-        /// <param name="request">
+        /// <param name="command">
         /// The encapsulated request body
         /// </param>
-        /// <param name="cancellationToken">
+        /// <param name="ct">
         /// The cancellation token to perform cancel the operation
         /// </param>
         /// <returns>A bool true or false</returns>
-        public async Task<bool> Handle(
-            DeleteChangelogCommand request,
-            CancellationToken cancellationToken)
+        public async Task<bool> ExecuteAsync(
+            DeleteChangelogCommand command,
+            CancellationToken ct)
         {
             var status = false;
 
@@ -55,7 +55,7 @@ public class DeleteChangelogCommand : IRequest<bool>
                 await _context
                     .Changelogs
                     .Where(x => date > x.ChangeDate)
-                    .DeleteAsync(cancellationToken)
+                    .DeleteAsync(ct)
                     .ConfigureAwait(false);
 
                 status = true;
