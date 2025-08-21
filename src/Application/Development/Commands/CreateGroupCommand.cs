@@ -13,7 +13,7 @@ namespace MSCoip.Application.Development.Commands;
 /// <summary>
 /// CreateGroupCommand
 /// </summary>
-public class CreateGroupCommand : IRequest<DocumentRootJson<ResponseGroupRoleUmsVm>>
+public class CreateGroupCommand : ICommand<DocumentRootJson<ResponseGroupRoleUmsVm>>
 {
     /// <summary>
     /// Gets or sets ServiceId
@@ -42,30 +42,30 @@ public class CreateGroupCommand : IRequest<DocumentRootJson<ResponseGroupRoleUms
 /// </remarks>
 /// <param name="_userAuthorizationService">Set userAuthorizationService to get User's Attributes</param>
 public class CreateGroupCommandHandler(IUserAuthorizationService _userAuthorizationService)
-    : IRequestHandler<CreateGroupCommand, DocumentRootJson<ResponseGroupRoleUmsVm>>
+    : ICommandHandler<CreateGroupCommand, DocumentRootJson<ResponseGroupRoleUmsVm>>
 {
     /// <summary>
-    /// Handle
+    /// ExecuteAsync
     /// </summary>
-    /// <param name="request">
+    /// <param name="command">
     /// The encapsulated request body
     /// </param>
-    /// <param name="cancellationToken">
+    /// <param name="ct">
     /// The cancellation token to perform cancel the operation
     /// </param>
     /// <returns>Add permission Group to UMS</returns>
-    public async Task<DocumentRootJson<ResponseGroupRoleUmsVm>> Handle(
-        CreateGroupCommand request,
-        CancellationToken cancellationToken)
+    public async Task<DocumentRootJson<ResponseGroupRoleUmsVm>> ExecuteAsync(
+        CreateGroupCommand command,
+        CancellationToken ct)
     {
         var permissionList = await _userAuthorizationService
-            .GetPermissionListAsync(request.ApplicationId, cancellationToken)
+            .GetPermissionListAsync(command.ApplicationId, ct)
             .ConfigureAwait(false);
         var groupList = await _userAuthorizationService
-            .GetGroupListAsync(request.ApplicationId, cancellationToken)
+            .GetGroupListAsync(command.ApplicationId, ct)
             .ConfigureAwait(false);
 
-        var groupNameList = request
+        var groupNameList = command
             .ControllerList
             .SelectMany(x => x.Groups)
             .Distinct()
@@ -77,7 +77,7 @@ public class CreateGroupCommandHandler(IUserAuthorizationService _userAuthorizat
         foreach (var groupName in groupNameList)
         {
             var permissionIds = new List<Guid>();
-            var controllerMethodList = request
+            var controllerMethodList = command
                 .ControllerList
                 .Where(x => x.Groups.Contains(groupName))
                 .ToList();
@@ -89,7 +89,7 @@ public class CreateGroupCommandHandler(IUserAuthorizationService _userAuthorizat
                         x =>
                             x.PermissionCode == $"{item.Controller}_{item.Action}"
                             && x.RequestType.ToLower().Equals(item.Method.ToLower())
-                            && x.Service.ServiceId.Equals(request.ServiceId))
+                            && x.Service.ServiceId.Equals(command.ServiceId))
                     .Select(x => x.PermissionId)
                     .ToList();
 
@@ -103,11 +103,11 @@ public class CreateGroupCommandHandler(IUserAuthorizationService _userAuthorizat
 
             var response = await _userAuthorizationService
                 .CreateGroupAsync(
-                    request.ApplicationId,
+                    command.ApplicationId,
                     groupName,
                     groupId,
                     permissionIds,
-                    cancellationToken)
+                    ct)
                 .ConfigureAwait(false);
 
             var actionList = controllerMethodList.Select(x => x.Action).ToList();

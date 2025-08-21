@@ -13,7 +13,7 @@ namespace MSCoip.Application.Development.Commands;
 /// <summary>
 /// CreatePermissionCommand
 /// </summary>
-public class CreatePermissionCommand : IRequest<DocumentRootJson<ResponsePermissionUmsVm>>
+public class CreatePermissionCommand : ICommand<DocumentRootJson<ResponsePermissionUmsVm>>
 {
     /// <summary>
     /// Gets or sets ServiceId
@@ -42,30 +42,30 @@ public class CreatePermissionCommand : IRequest<DocumentRootJson<ResponsePermiss
 /// </remarks>
 /// <param name="_userAuthorizationService">Set userAuthorizationService to get User's Attributes</param>
 public class CreatePermissionCommandHandler(IUserAuthorizationService _userAuthorizationService)
-    : IRequestHandler<CreatePermissionCommand, DocumentRootJson<ResponsePermissionUmsVm>>
+    : ICommandHandler<CreatePermissionCommand, DocumentRootJson<ResponsePermissionUmsVm>>
 {
     /// <summary>
-    /// Handle
+    /// ExecuteAsync
     /// </summary>
-    /// <param name="request">
+    /// <param name="command">
     /// The encapsulated request body
     /// </param>
-    /// <param name="cancellationToken">
+    /// <param name="ct">
     /// The cancellation token to perform cancel the operation
     /// </param>
     /// <returns>Add permission to UMS</returns>
-    public async Task<DocumentRootJson<ResponsePermissionUmsVm>> Handle(
-        CreatePermissionCommand request,
-        CancellationToken cancellationToken)
+    public async Task<DocumentRootJson<ResponsePermissionUmsVm>> ExecuteAsync(
+        CreatePermissionCommand command,
+        CancellationToken ct)
     {
         var permissionList = new List<PermissionDto>();
 
-        foreach (var item in request.ControllerList)
+        foreach (var item in command.ControllerList)
         {
             permissionList.Add(
                 new PermissionDto
                 {
-                    ServiceId = request.ServiceId,
+                    ServiceId = command.ServiceId,
                     PermissionCode = $"{item.Controller}_{item.Action}",
                     Path = item.Url,
                     PostStatus = item.Method.Equals("POST") ? true : null,
@@ -99,7 +99,7 @@ public class CreatePermissionCommandHandler(IUserAuthorizationService _userAutho
             .ToList();
 
         var response = await _userAuthorizationService
-            .CreatePermissionsAsync(request.ApplicationId, permissionList, cancellationToken)
+            .CreatePermissionsAsync(command.ApplicationId, permissionList, ct)
             .ConfigureAwait(false);
 
         var result = new ResponsePermissionUmsVm { ResponsePermissionDtos = response };

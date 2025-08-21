@@ -14,7 +14,7 @@ namespace MSCoip.Application.Development.Commands;
 /// <summary>
 /// CreateRoleCommand
 /// </summary>
-public class CreateRoleCommand : IRequest<DocumentRootJson<ResponseGroupRoleUmsVm>>
+public class CreateRoleCommand : ICommand<DocumentRootJson<ResponseGroupRoleUmsVm>>
 {
     /// <summary>
     /// Gets or sets ApplicationId
@@ -40,31 +40,31 @@ public class CreateRoleCommand : IRequest<DocumentRootJson<ResponseGroupRoleUmsV
 public class AddPermissionRoleCommandHandler(
     IUserAuthorizationService _userAuthorizationService,
     AppSetting _appSetting
-) : IRequestHandler<CreateRoleCommand, DocumentRootJson<ResponseGroupRoleUmsVm>>
+) : ICommandHandler<CreateRoleCommand, DocumentRootJson<ResponseGroupRoleUmsVm>>
 {
     /// <summary>
-    /// Handle
+    /// ExecuteAsync
     /// </summary>
-    /// <param name="request">
+    /// <param name="command">
     /// The encapsulated request body
     /// </param>
-    /// <param name="cancellationToken">
+    /// <param name="ct">
     /// The cancellation token to perform cancel the operation
     /// </param>
     /// <returns>Add permission Group to UMS</returns>
-    public async Task<DocumentRootJson<ResponseGroupRoleUmsVm>> Handle(
-        CreateRoleCommand request,
-        CancellationToken cancellationToken)
+    public async Task<DocumentRootJson<ResponseGroupRoleUmsVm>> ExecuteAsync(
+        CreateRoleCommand command,
+        CancellationToken ct)
     {
         var roleSettingList = _appSetting.AuthorizationServer.Role;
         var roleList = await _userAuthorizationService
-            .GetRoleListAsync(request.ApplicationId, cancellationToken)
+            .GetRoleListAsync(command.ApplicationId, ct)
             .ConfigureAwait(false);
         var groupList = await _userAuthorizationService
-            .GetGroupListAsync(request.ApplicationId, cancellationToken)
+            .GetGroupListAsync(command.ApplicationId, ct)
             .ConfigureAwait(false);
 
-        var groupNameList = request
+        var groupNameList = command
             .ControllerList
             .SelectMany(x => x.Groups)
             .Distinct()
@@ -124,11 +124,11 @@ public class AddPermissionRoleCommandHandler(
 
             var response = await _userAuthorizationService
                 .CreateRoleAsync(
-                    request.ApplicationId,
+                    command.ApplicationId,
                     itemRole.Name,
                     roleId,
                     groupIds,
-                    cancellationToken)
+                    ct)
                 .ConfigureAwait(false);
 
             responsePermission.Add(
