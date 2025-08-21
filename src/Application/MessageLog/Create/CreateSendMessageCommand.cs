@@ -8,7 +8,7 @@ namespace MSCoip.Application.MessageLog.Create;
 /// <summary>
 /// CreateSendMessageCommand
 /// </summary>
-public class CreateSendMessageCommand : IRequest<Unit>
+public class CreateSendMessageCommand : ICommand<EmptyResponse>
 {
     /// <summary>
     /// Gets or sets MessageBroker
@@ -27,28 +27,28 @@ public class CreateSendMessageCommand : IRequest<Unit>
 public class CreateSendMessageCommandHandler(
     IApplicationDbContext _context,
     ILogger<CreateSendMessageCommandHandler> _logger
-) : IRequestHandler<CreateSendMessageCommand, Unit>
+) : ICommandHandler<CreateSendMessageCommand, EmptyResponse>
 {
     /// <summary>
-    /// Handle Create Send Message Command
+    /// ExecuteAsync Create Send Message Command
     /// </summary>
-    /// <param name="request">
+    /// <param name="command">
     /// The encapsulated request body
     /// </param>
-    /// <param name="cancellationToken">
+    /// <param name="ct">
     /// The cancellation token to perform cancel the operation
     /// </param>
     /// <returns></returns>
-    public async Task<Unit> Handle(
-        CreateSendMessageCommand request,
-        CancellationToken cancellationToken)
+    public async Task<EmptyResponse> ExecuteAsync(
+        CreateSendMessageCommand command,
+        CancellationToken ct)
     {
-        _context.MessageBroker.Add(request.MessageBroker);
+        _context.MessageBroker.Add(command.MessageBroker);
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _context.SaveChangesAsync(ct).ConfigureAwait(false);
 
         _logger.LogDebug("Save send message success");
 
-        return Unit.Value;
+        return new();
     }
 }

@@ -8,7 +8,7 @@ namespace MSCoip.Application.MessageLog.Create;
 /// <summary>
 /// CreateReceivedMessageCommand
 /// </summary>
-public class CreateReceivedMessageCommand : IRequest<Unit>
+public class CreateReceivedMessageCommand : ICommand<EmptyResponse>
 {
     /// <summary>
     /// Gets or sets Message
@@ -27,28 +27,28 @@ public class CreateReceivedMessageCommand : IRequest<Unit>
 public class CreateReceivedMessageCommandHandler(
     IApplicationDbContext _context,
     ILogger<CreateReceivedMessageCommandHandler> _logger
-) : IRequestHandler<CreateReceivedMessageCommand, Unit>
+) : ICommandHandler<CreateReceivedMessageCommand, EmptyResponse>
 {
     /// <summary>
-    /// Handle Create Received Message Command
+    /// ExecuteAsync Create Received Message Command
     /// </summary>
-    /// <param name="request">
+    /// <param name="command">
     /// The encapsulated request body
     /// </param>
-    /// <param name="cancellationToken">
+    /// <param name="ct">
     /// The cancellation token to perform cancel the operation
     /// </param>
     /// <returns></returns>
-    public async Task<Unit> Handle(
-        CreateReceivedMessageCommand request,
-        CancellationToken cancellationToken)
+    public async Task<EmptyResponse> ExecuteAsync(
+        CreateReceivedMessageCommand command,
+        CancellationToken ct)
     {
-        _context.ReceivedMessageBroker.Add(request.Message);
+        _context.ReceivedMessageBroker.Add(command.Message);
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _context.SaveChangesAsync(ct).ConfigureAwait(false);
 
         _logger.LogDebug("Save received message success");
 
-        return Unit.Value;
+        return new();
     }
 }
