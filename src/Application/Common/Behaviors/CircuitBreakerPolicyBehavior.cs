@@ -23,8 +23,8 @@ using ValidationException = MSCoip.Application.Common.Exceptions.ValidationExcep
 namespace MSCoip.Application.Common.Behaviors;
 
 /// <summary>
-/// Applies a circuit breaker policy on the MediatR request.
-/// Apply this attribute to the MediatR <see cref="IRequest"/> class (not on the handler).
+/// Applies a circuit breaker policy on the FastEndpoints request.
+/// Apply this attribute to the FastEndpoints <see cref="ICommand"/> class (not on the handler).
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
 public class CircuitBreakerPolicyAttribute : Attribute
@@ -88,40 +88,40 @@ public class CircuitBreakerPolicyAttribute : Attribute
 /// Wraps request handler execution of requests decorated with the <see cref="CircuitBreakerPolicyAttribute"/>
 /// inside a policy to handle transient failures and circuit breaker the execution.
 /// </summary>
-/// <typeparam name="TRequest"></typeparam>
+/// <typeparam name="TCommand"></typeparam>
 /// <typeparam name="TResponse"></typeparam>
 /// <remarks>
-/// Initializes a new instance of the <see cref="CircuitBreakerPolicyBehavior{TRequest, TResponse}"/> class.
+/// Initializes a new instance of the <see cref="CircuitBreakerPolicyBehavior{TCommand, TResponse}"/> class.
 /// </remarks>
 /// <param name="_logger"></param>
 /// <param name="appSetting"></param>
 /// <param name="_environment"></param>
-public class CircuitBreakerPolicyBehavior<TRequest, TResponse>(
-    ILogger<CircuitBreakerPolicyBehavior<TRequest, TResponse>> _logger,
+public class CircuitBreakerPolicyBehavior<TCommand, TResponse>(
+    ILogger<CircuitBreakerPolicyBehavior<TCommand, TResponse>> _logger,
     AppSetting appSetting,
     IWebHostEnvironment _environment
-) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+) : ICommandMiddleware<TCommand, TResponse>
+    where TCommand : ICommand<TResponse>
 {
     private readonly CircuitBreaker _circuitBreakerPolicy = appSetting
         .ResiliencyPolicy
         .CircuitBreaker;
 
-    private readonly string _requestName = typeof(TRequest).Name;
+    private readonly string _requestName = typeof(TCommand).Name;
 
     private AsyncCircuitBreakerPolicy<TResponse> _circuitBreaker;
 
     /// <summary>
-    /// Handle
+    /// ExecuteAsync
     /// </summary>
-    /// <param name="request"></param>
+    /// <param name="command"></param>
     /// <param name="next"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+    public async Task<TResponse> ExecuteAsync(
+        TCommand command,
+        CommandDelegate<TResponse> next,
+        CancellationToken ct)
     {
         if (_environment.EnvironmentName.Equals(EnvironmentConstants.NameTest))
         {
@@ -129,7 +129,7 @@ public class CircuitBreakerPolicyBehavior<TRequest, TResponse>(
         }
 
         var circuitBreakerAttr =
-            typeof(TRequest).GetCustomAttribute<CircuitBreakerPolicyAttribute>();
+            typeof(TCommand).GetCustomAttribute<CircuitBreakerPolicyAttribute>();
 
         if (
             (circuitBreakerAttr != null && !circuitBreakerAttr.Enabled)

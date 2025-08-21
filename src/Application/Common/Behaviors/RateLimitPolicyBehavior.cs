@@ -16,8 +16,8 @@ using Polly.RateLimit;
 namespace MSCoip.Application.Common.Behaviors;
 
 /// <summary>
-/// Applies a rate limit policy on the MediatR request.
-/// Apply this attribute to the MediatR <see cref="IRequest"/> class (not on the handler).
+/// Applies a rate limit policy on the FastEndpoints request.
+/// Apply this attribute to the FastEndpoints <see cref="ICommand"/> class (not on the handler).
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
 public class RateLimitPolicyAttribute : Attribute
@@ -95,18 +95,18 @@ public class RateLimitPolicyAttribute : Attribute
 /// Wraps request handler execution of requests decorated with the <see cref="RateLimitPolicyAttribute"/>
 /// inside a policy to handle transient rate limit the execution.
 /// </summary>
-/// <typeparam name="TRequest"></typeparam>
+/// <typeparam name="TCommand"></typeparam>
 /// <typeparam name="TResponse"></typeparam>
 /// <remarks>
-/// Initializes a new instance of the <see cref="RateLimitPolicyBehavior{TRequest, TResponse}"/> class.
+/// Initializes a new instance of the <see cref="RateLimitPolicyBehavior{TCommand, TResponse}"/> class.
 /// </remarks>
 /// <param name="appSetting"></param>
 /// <param name="_environment"></param>
-public class RateLimitPolicyBehavior<TRequest, TResponse>(
+public class RateLimitPolicyBehavior<TCommand, TResponse>(
     AppSetting appSetting,
     IWebHostEnvironment _environment
-) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+) : ICommandMiddleware<TCommand, TResponse>
+    where TCommand : ICommand<TResponse>
 {
     private readonly string _env = appSetting.Environment;
     private readonly RateLimit _rateLimitPolicy = appSetting.ResiliencyPolicy.RateLimit;
@@ -114,16 +114,16 @@ public class RateLimitPolicyBehavior<TRequest, TResponse>(
     private AsyncRateLimitPolicy<TResponse> _rateLimit;
 
     /// <summary>
-    /// Handle
+    /// ExecuteAsync
     /// </summary>
-    /// <param name="request"></param>
+    /// <param name="command"></param>
     /// <param name="next"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+    public async Task<TResponse> ExecuteAsync(
+        TCommand command,
+        CommandDelegate<TResponse> next,
+        CancellationToken ct)
     {
         if (
             _environment.EnvironmentName.Equals(EnvironmentConstants.NameTest)
@@ -133,7 +133,7 @@ public class RateLimitPolicyBehavior<TRequest, TResponse>(
             return await next().ConfigureAwait(false);
         }
 
-        var rateLimitAttr = typeof(TRequest).GetCustomAttribute<RateLimitPolicyAttribute>();
+        var rateLimitAttr = typeof(TCommand).GetCustomAttribute<RateLimitPolicyAttribute>();
 
         if (
             (rateLimitAttr != null && !rateLimitAttr.Enabled)

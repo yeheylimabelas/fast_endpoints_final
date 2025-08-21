@@ -17,8 +17,8 @@ using Polly.Bulkhead;
 namespace MSCoip.Application.Common.Behaviors;
 
 /// <summary>
-/// Applies a fallback policy on the MediatR request.
-/// Apply this attribute to the MediatR <see cref="IRequest"/> class (not on the handler).
+/// Applies a fallback policy on the FastEndpoints request.
+/// Apply this attribute to the FastEndpoints <see cref="ICommand"/> class (not on the handler).
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
 public class BulkheadPolicyAttribute : Attribute
@@ -77,38 +77,38 @@ public class BulkheadPolicyAttribute : Attribute
 /// Wraps request handler execution of requests decorated with the <see cref="BulkheadPolicyAttribute"/>
 /// inside a policy to handle transient bulk head the execution.
 /// </summary>
-/// <typeparam name="TRequest"></typeparam>
+/// <typeparam name="TCommand"></typeparam>
 /// <typeparam name="TResponse"></typeparam>
 /// <remarks>
-/// Initializes a new instance of the <see cref="BulkheadPolicyBehavior{TRequest, TResponse}"/> class.
+/// Initializes a new instance of the <see cref="BulkheadPolicyBehavior{TCommand, TResponse}"/> class.
 /// </remarks>
 /// <param name="_logger"></param>
 /// <param name="appSetting"></param>
 /// <param name="_environment"></param>
-public class BulkheadPolicyBehavior<TRequest, TResponse>(
-    ILogger<BulkheadPolicyBehavior<TRequest, TResponse>> _logger,
+public class BulkheadPolicyBehavior<TCommand, TResponse>(
+    ILogger<BulkheadPolicyBehavior<TCommand, TResponse>> _logger,
     AppSetting appSetting,
     IWebHostEnvironment _environment
-) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+) : ICommandMiddleware<TCommand, TResponse>
+    where TCommand : ICommand<TResponse>
 {
     private readonly string _env = appSetting.Environment;
     private readonly Bulkhead _bulkHeadPolicy = appSetting.ResiliencyPolicy.Bulkhead;
-    private readonly string _requestName = typeof(TRequest).Name;
+    private readonly string _requestName = typeof(TCommand).Name;
 
     private AsyncBulkheadPolicy<TResponse> _bulkHead;
 
     /// <summary>
-    /// Handle
+    /// ExecuteAsync
     /// </summary>
-    /// <param name="request"></param>
+    /// <param name="command"></param>
     /// <param name="next"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+    public async Task<TResponse> ExecuteAsync(
+        TCommand command,
+        CommandDelegate<TResponse> next,
+        CancellationToken ct)
     {
         if (
             _environment.EnvironmentName.Equals(EnvironmentConstants.NameTest)
@@ -118,7 +118,7 @@ public class BulkheadPolicyBehavior<TRequest, TResponse>(
             return await next().ConfigureAwait(false);
         }
 
-        var bulkHeadAttr = typeof(TRequest).GetCustomAttribute<BulkheadPolicyAttribute>();
+        var bulkHeadAttr = typeof(TCommand).GetCustomAttribute<BulkheadPolicyAttribute>();
 
         if (
             (bulkHeadAttr != null && !bulkHeadAttr.Enabled)

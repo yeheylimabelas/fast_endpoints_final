@@ -14,40 +14,40 @@ namespace MSCoip.Application.Common.Behaviors;
 /// <summary>
 /// RequestBehavior
 /// </summary>
-/// <typeparam name="TRequest"></typeparam>
+/// <typeparam name="TCommand"></typeparam>
 /// <typeparam name="TResponse"></typeparam>
 /// <remarks>
-/// Initializes a new instance of the <see cref="RequestBehavior{TRequest, TResponse}"/> class.
+/// Initializes a new instance of the <see cref="RequestBehavior{TCommand, TResponse}"/> class.
 /// </remarks>
 /// <param name="_logger"></param>
-public class RequestBehavior<TRequest, TResponse>(
-    ILogger<RequestBehavior<TRequest, TResponse>> _logger
-) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+public class RequestBehavior<TCommand, TResponse>(
+    ILogger<RequestBehavior<TCommand, TResponse>> _logger
+) : ICommandMiddleware<TCommand, TResponse>
+    where TCommand : ICommand<TResponse>
 {
     /// <summary>
-    /// Handle
+    /// ExecuteAsync
     /// </summary>
-    /// <param name="request"></param>
+    /// <param name="command"></param>
     /// <param name="next"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+    public async Task<TResponse> ExecuteAsync(
+        TCommand command,
+        CommandDelegate<TResponse> next,
+        CancellationToken ct)
     {
-        var requestType = typeof(TRequest).Name;
+        var requestType = typeof(TCommand).Name;
 
         var response = await next().ConfigureAwait(false);
 
         if (requestType.EndsWith("Command"))
         {
-            _logger.LogDebug("Command Request: {request}", request);
+            _logger.LogDebug("Command Request: {request}", command);
         }
         else if (requestType.EndsWith("Query"))
         {
-            _logger.LogDebug("Query Request: {request}", request);
+            _logger.LogDebug("Query Request: {request}", command);
             _logger.LogDebug("Query Response: {response}", response);
         }
         else

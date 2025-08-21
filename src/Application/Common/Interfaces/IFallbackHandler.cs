@@ -15,7 +15,7 @@ namespace MSCoip.Application.Common.Interfaces;
 /// <typeparam name="TRequest"></typeparam>
 /// <typeparam name="TResponse"></typeparam>
 public interface IFallbackHandler<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+    where TRequest : ICommand<TResponse>
 {
     /// <summary>
     /// HandleFallback

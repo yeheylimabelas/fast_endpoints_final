@@ -17,31 +17,31 @@ namespace MSCoip.Application.Common.Behaviors;
 /// <summary>
 /// PerformanceBehavior
 /// </summary>
-/// <typeparam name="TRequest"></typeparam>
+/// <typeparam name="TCommand"></typeparam>
 /// <typeparam name="TResponse"></typeparam>
 /// <remarks>
-/// Initializes a new instance of the <see cref="PerformanceBehavior{TRequest, TResponse}"/> class.
+/// Initializes a new instance of the <see cref="PerformanceBehavior{TCommand, TResponse}"/> class.
 /// </remarks>
 /// <param name="_logger"></param>
 /// <param name="_userAuthorizationService"></param>
 /// <param name="_appSetting"></param>
-public class PerformanceBehavior<TRequest, TResponse>(
-    ILogger<TRequest> _logger,
+public class PerformanceBehavior<TCommand, TResponse>(
+    ILogger<TCommand> _logger,
     IUserAuthorizationService _userAuthorizationService,
-    AppSetting _appSetting) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+    AppSetting _appSetting) : ICommandMiddleware<TCommand, TResponse>
+    where TCommand : ICommand<TResponse>
 {
     private readonly Stopwatch _timer = new Stopwatch();
 
     /// <summary>
-    /// Handle
+    /// ExecuteAsync
     /// </summary>
-    /// <param name="request"></param>
+    /// <param name="command"></param>
     /// <param name="next"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<TResponse> Handle(
-        TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> ExecuteAsync(
+        TCommand command, CommandDelegate<TResponse> next, CancellationToken ct)
     {
         _timer.Start();
 
@@ -56,7 +56,7 @@ public class PerformanceBehavior<TRequest, TResponse>(
             return response;
         }
 
-        var requestName = typeof(TRequest).Name;
+        var requestName = typeof(TCommand).Name;
         var user = _userAuthorizationService.GetAuthorizedUser();
         var userName = user.UserName ?? SystemConstants.Name;
 
@@ -66,7 +66,7 @@ public class PerformanceBehavior<TRequest, TResponse>(
             requestName,
             elapsedMilliseconds,
             userName,
-            request);
+            command);
 
         return response;
     }

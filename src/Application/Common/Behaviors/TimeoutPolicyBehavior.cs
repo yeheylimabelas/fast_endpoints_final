@@ -18,8 +18,8 @@ using Timeout = MSCoip.Application.Common.Models.Timeout;
 namespace MSCoip.Application.Common.Behaviors;
 
 /// <summary>
-/// Applies a timeout policy on the MediatR request.
-/// Apply this attribute to the MediatR <see cref="IRequest"/> class (not on the handler).
+/// Applies a timeout policy on the FastEndpoints request.
+/// Apply this attribute to the FastEndpoints <see cref="ICommand"/> class (not on the handler).
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
 public class TimeoutPolicyAttribute : Attribute
@@ -57,44 +57,44 @@ public class TimeoutPolicyAttribute : Attribute
 /// Wraps request handler execution of requests decorated with the <see cref="TimeoutPolicyAttribute"/>
 /// inside a policy to handle transient timeout policy of the execution.
 /// </summary>
-/// <typeparam name="TRequest"></typeparam>
+/// <typeparam name="TCommand"></typeparam>
 /// <typeparam name="TResponse"></typeparam>
 /// <remarks>
-/// Initializes a new instance of the <see cref="TimeoutPolicyBehavior{TRequest, TResponse}"/> class.
+/// Initializes a new instance of the <see cref="TimeoutPolicyBehavior{TCommand, TResponse}"/> class.
 /// </remarks>
 /// <param name="_logger"></param>
 /// <param name="appSetting"></param>
 /// <param name="_environment"></param>
-public class TimeoutPolicyBehavior<TRequest, TResponse>(
-    ILogger<TimeoutPolicyBehavior<TRequest, TResponse>> _logger,
+public class TimeoutPolicyBehavior<TCommand, TResponse>(
+    ILogger<TimeoutPolicyBehavior<TCommand, TResponse>> _logger,
     AppSetting appSetting,
     IWebHostEnvironment _environment
-) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+) : ICommandMiddleware<TCommand, TResponse>
+    where TCommand : ICommand<TResponse>
 {
     private readonly Timeout _timeoutPolicy = appSetting.ResiliencyPolicy.Timeout;
-    private readonly string _requestName = typeof(TRequest).Name;
+    private readonly string _requestName = typeof(TCommand).Name;
 
     private AsyncTimeoutPolicy<TResponse> _timeout;
 
     /// <summary>
-    /// Handle
+    /// ExecuteAsync
     /// </summary>
-    /// <param name="request"></param>
+    /// <param name="command"></param>
     /// <param name="next"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+    public async Task<TResponse> ExecuteAsync(
+        TCommand command,
+        CommandDelegate<TResponse> next,
+        CancellationToken ct)
     {
         if (_environment.EnvironmentName.Equals(EnvironmentConstants.NameTest))
         {
             return await next().ConfigureAwait(false);
         }
 
-        var timeoutAttr = typeof(TRequest).GetCustomAttribute<TimeoutPolicyAttribute>();
+        var timeoutAttr = typeof(TCommand).GetCustomAttribute<TimeoutPolicyAttribute>();
 
         if (
             (timeoutAttr != null && !timeoutAttr.Enabled)

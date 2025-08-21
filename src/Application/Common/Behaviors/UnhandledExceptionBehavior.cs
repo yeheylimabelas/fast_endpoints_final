@@ -17,33 +17,33 @@ namespace MSCoip.Application.Common.Behaviors;
 /// <summary>
 /// UnhandledExceptionBehavior
 /// </summary>
-/// <typeparam name="TRequest"></typeparam>
+/// <typeparam name="TCommand"></typeparam>
 /// <typeparam name="TResponse"></typeparam>
 /// <remarks>
-/// Initializes a new instance of the <see cref="UnhandledExceptionBehavior{TRequest, TResponse}"/> class.
+/// Initializes a new instance of the <see cref="UnhandledExceptionBehavior{TCommand, TResponse}"/> class.
 /// </remarks>
 /// <param name="logger"></param>
 /// <param name="appSetting"></param>
-public class UnhandledExceptionBehavior<TRequest, TResponse>(
-    ILogger<TRequest> logger,
+public class UnhandledExceptionBehavior<TCommand, TResponse>(
+    ILogger<TCommand> logger,
     AppSetting appSetting
-) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+) : ICommandMiddleware<TCommand, TResponse>
+    where TCommand : ICommand<TResponse>
 {
-    private readonly ILogger<TRequest> _logger = logger;
+    private readonly ILogger<TCommand> _logger = logger;
     private readonly AppSetting _appSetting = appSetting;
 
     /// <summary>
-    /// Handle
+    /// ExecuteAsync
     /// </summary>
-    /// <param name="request"></param>
+    /// <param name="command"></param>
     /// <param name="next"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+    public async Task<TResponse> ExecuteAsync(
+        TCommand command,
+        CommandDelegate<TResponse> next,
+        CancellationToken ct)
     {
         try
         {
@@ -65,8 +65,8 @@ public class UnhandledExceptionBehavior<TRequest, TResponse>(
                         ex,
                         "{namespace} Request: Unhandled Exception for Request {Name} {@Request}",
                         _appSetting.App.Namespace,
-                        typeof(TRequest).Name,
-                        request);
+                        typeof(TCommand).Name,
+                        command);
                     break;
             }
 

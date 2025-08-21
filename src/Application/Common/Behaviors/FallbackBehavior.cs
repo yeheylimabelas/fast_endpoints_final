@@ -21,32 +21,32 @@ namespace MSCoip.Application.Common.Behaviors;
 /// Wraps request handler execution of requests
 /// inside a policy to handle transient fallback the execution.
 /// </summary>
-/// <typeparam name="TRequest"></typeparam>
+/// <typeparam name="TCommand"></typeparam>
 /// <typeparam name="TResponse"></typeparam>
 /// <remarks>
-/// Initializes a new instance of the <see cref="FallbackBehavior{TRequest, TResponse}"/> class.
+/// Initializes a new instance of the <see cref="FallbackBehavior{TCommand, TResponse}"/> class.
 /// </remarks>
 /// <param name="_fallbackHandlers"></param>
 /// <param name="_logger"></param>
 /// <param name="_environment"></param>
-public class FallbackBehavior<TRequest, TResponse>(
-    IEnumerable<IFallbackHandler<TRequest, TResponse>> _fallbackHandlers,
-    ILogger<FallbackBehavior<TRequest, TResponse>> _logger,
+public class FallbackBehavior<TCommand, TResponse>(
+    IEnumerable<IFallbackHandler<TCommand, TResponse>> _fallbackHandlers,
+    ILogger<FallbackBehavior<TCommand, TResponse>> _logger,
     IWebHostEnvironment _environment
-) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+) : ICommandMiddleware<TCommand, TResponse>
+    where TCommand : ICommand<TResponse>
 {
     /// <summary>
-    /// Handle
+    /// ExecuteAsync
     /// </summary>
-    /// <param name="request"></param>
+    /// <param name="command"></param>
     /// <param name="next"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+    public async Task<TResponse> ExecuteAsync(
+        TCommand command,
+        CommandDelegate<TResponse> next,
+        CancellationToken ct)
     {
         if (_environment.EnvironmentName.Equals(EnvironmentConstants.NameTest))
         {
@@ -60,7 +60,7 @@ public class FallbackBehavior<TRequest, TResponse>(
             return await next().ConfigureAwait(false);
         }
 
-        var requestName = typeof(TRequest).Name;
+        var requestName = typeof(TCommand).Name;
 
         return await Policy<TResponse>
             .Handle<Exception>()
@@ -70,7 +70,7 @@ public class FallbackBehavior<TRequest, TResponse>(
                     _logger.LogInformation("Falling back response for request {name}", requestName);
 
                     return await fallbackHandler
-                        .HandleFallback(request, cancellationToken)
+                        .HandleFallback(command, cancellationToken)
                         .ConfigureAwait(false);
                 })
             .ExecuteAsync(() => next())

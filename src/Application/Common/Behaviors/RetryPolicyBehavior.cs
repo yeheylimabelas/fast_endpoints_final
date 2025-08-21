@@ -19,8 +19,8 @@ using ValidationException = MSCoip.Application.Common.Exceptions.ValidationExcep
 namespace MSCoip.Application.Common.Behaviors;
 
 /// <summary>
-/// Applies a retry policy on the MediatR request.
-/// Apply this attribute to the MediatR <see cref="IRequest{TResponse}"/> class (not on the handler).
+/// Applies a retry policy on the FastEndpoints request.
+/// Apply this attribute to the FastEndpoints <see cref="ICommand{TResponse}"/> class (not on the handler).
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
 public class RetryPolicyAttribute : Attribute
@@ -84,37 +84,37 @@ public class RetryPolicyAttribute : Attribute
 /// Wraps request handler execution of requests decorated with the <see cref="RetryPolicyAttribute"/>
 /// inside a policy to handle transient failures and retry the execution.
 /// </summary>
-/// <typeparam name="TRequest"></typeparam>
+/// <typeparam name="TCommand"></typeparam>
 /// <typeparam name="TResponse"></typeparam>
 /// <remarks>
-/// Initializes a new instance of the <see cref="RetryPolicyBehavior{TRequest, TResponse}"/> class.
+/// Initializes a new instance of the <see cref="RetryPolicyBehavior{TCommand, TResponse}"/> class.
 /// </remarks>
 /// <param name="_logger"></param>
 /// <param name="_environment"></param>
-public class RetryPolicyBehavior<TRequest, TResponse>(
-    ILogger<RetryPolicyBehavior<TRequest, TResponse>> _logger,
+public class RetryPolicyBehavior<TCommand, TResponse>(
+    ILogger<RetryPolicyBehavior<TCommand, TResponse>> _logger,
     IWebHostEnvironment _environment
-) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+) : ICommandMiddleware<TCommand, TResponse>
+    where TCommand : ICommand<TResponse>
 {
     /// <summary>
-    /// Handle
+    /// ExecuteAsync
     /// </summary>
-    /// <param name="request"></param>
+    /// <param name="command"></param>
     /// <param name="next"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+    public async Task<TResponse> ExecuteAsync(
+        TCommand command,
+        CommandDelegate<TResponse> next,
+        CancellationToken ct)
     {
         if (_environment.EnvironmentName.Equals(EnvironmentConstants.NameTest))
         {
             return await next().ConfigureAwait(false);
         }
 
-        var retryAttr = typeof(TRequest).GetCustomAttribute<RetryPolicyAttribute>();
+        var retryAttr = typeof(TCommand).GetCustomAttribute<RetryPolicyAttribute>();
 
         if (retryAttr == null || !retryAttr.Enabled)
         {
@@ -125,7 +125,7 @@ public class RetryPolicyBehavior<TRequest, TResponse>(
             medianFirstRetryDelay: TimeSpan.FromMilliseconds(retryAttr.SleepDuration),
             retryCount: retryAttr.RetryCount);
 
-        var requestName = typeof(TRequest).Name;
+        var requestName = typeof(TCommand).Name;
 
         return await Policy<TResponse>
             .Handle<Exception>(ex =>

@@ -15,38 +15,38 @@ namespace MSCoip.Application.Common.Behaviors;
 /// <summary>
 /// ValidationBehavior
 /// </summary>
-/// <typeparam name="TRequest"></typeparam>
+/// <typeparam name="TCommand"></typeparam>
 /// <typeparam name="TResponse"></typeparam>
 /// <remarks>
-/// Initializes a new instance of the <see cref="ValidationBehavior{TRequest, TResponse}"/> class.
+/// Initializes a new instance of the <see cref="ValidationBehavior{TCommand, TResponse}"/> class.
 /// </remarks>
 /// <param name="_validators"></param>
-public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> _validators)
-    : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+public class ValidationBehavior<TCommand, TResponse>(IEnumerable<IValidator<TCommand>> _validators)
+    : ICommandMiddleware<TCommand, TResponse>
+    where TCommand : ICommand<TResponse>
 {
     /// <summary>
-    /// Handle
+    /// ExecuteAsync
     /// </summary>
-    /// <param name="request"></param>
+    /// <param name="command"></param>
     /// <param name="next"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
     /// <exception cref="ValidationException">Validation exception</exception>
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+    public async Task<TResponse> ExecuteAsync(
+        TCommand command,
+        CommandDelegate<TResponse> next,
+        CancellationToken ct)
     {
         if (!_validators.Any())
         {
             return await next().ConfigureAwait(false);
         }
 
-        var context = new ValidationContext<TRequest>(request);
+        var context = new FluentValidation.ValidationContext<TCommand>(command);
 
         var validationResults = await Task.WhenAll(
-                _validators.Select(v => v.ValidateAsync(context, cancellationToken)))
+                _validators.Select(v => v.ValidateAsync(context, ct)))
             .ConfigureAwait(false);
 
         var failures = validationResults.SelectMany(r => r.Errors).Where(f => f != null).ToList();
